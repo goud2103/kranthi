@@ -2,25 +2,45 @@ version: 0.2
 
 env:
   variables:
-    IMAGE_TAG: "latest"
+    AWS_ACCOUNT_ID: "348542648229"
+    AWS_DEFAULT_REGION: "ap-south-1"
+    IMAGE_REPO_NAME: "node-hello"
 
 phases:
   pre_build:
     commands:
       - echo Logging in to Amazon ECR...
-      - aws ecr get-login-password --region ap-south-1 | docker login --username AWS --password-stdin 348542648229.dkr.ecr.ap-south-1.amazonaws.com
+      - aws ecr get-login-password --region $AWS_DEFAULT_REGION | docker login --username AWS --password-stdin $AWS_ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com
+
+      # Dynamic version tag
+      - IMAGE_TAG=v$(date +%Y%m%d%H%M%S)
+
+      - echo Image tag is $IMAGE_TAG
 
   build:
     commands:
       - echo Build started
-      - docker build -t node-hello .
-      - docker tag node-hello:latest 348542648229.dkr.ecr.ap-south-1.amazonaws.com/node-hello:$IMAGE_TAG
+
+      - docker build -t $IMAGE_REPO_NAME .
+
+      # Tag latest
+      - docker tag $IMAGE_REPO_NAME:latest $AWS_ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com/$IMAGE_REPO_NAME:latest
+
+      # Tag version
+      - docker tag $IMAGE_REPO_NAME:latest $AWS_ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com/$IMAGE_REPO_NAME:$IMAGE_TAG
 
   post_build:
     commands:
-      - echo Pushing Docker image...
-      - docker push 348542648229.dkr.ecr.ap-south-1.amazonaws.com/node-hello:$IMAGE_TAG
-      - printf '[{"name":"node-hello","imageUri":"348542648229.dkr.ecr.ap-south-1.amazonaws.com/node-hello:%s"}]' $IMAGE_TAG > imagedefinitions.json
+      - echo Pushing latest image...
+      - docker push $AWS_ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com/$IMAGE_REPO_NAME:latest
+
+      - echo Pushing version image...
+      - docker push $AWS_ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com/$IMAGE_REPO_NAME:$IMAGE_TAG
+
+      # ECS deployment file
+      - printf '[{"name":"node-hello","imageUri":"%s"}]' \
+        $AWS_ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com/$IMAGE_REPO_NAME:latest \
+        > imagedefinitions.json
 
 artifacts:
   files:

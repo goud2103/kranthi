@@ -5,6 +5,7 @@ env:
     AWS_ACCOUNT_ID: "348542648229"
     AWS_DEFAULT_REGION: "ap-south-1"
     IMAGE_REPO_NAME: "node-hello"
+    IMAGE_TAG: "v1"
 
 phases:
   pre_build:
@@ -12,21 +13,16 @@ phases:
       - echo Logging in to Amazon ECR...
       - aws ecr get-login-password --region $AWS_DEFAULT_REGION | docker login --username AWS --password-stdin $AWS_ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com
 
-      # Dynamic version tag
-      - IMAGE_TAG=v$(date +%Y%m%d%H%M%S)
-
-      - echo Image tag is $IMAGE_TAG
-
   build:
     commands:
       - echo Build started
 
       - docker build -t $IMAGE_REPO_NAME .
 
-      # Tag latest
+      # latest tag
       - docker tag $IMAGE_REPO_NAME:latest $AWS_ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com/$IMAGE_REPO_NAME:latest
 
-      # Tag version
+      # version tag
       - docker tag $IMAGE_REPO_NAME:latest $AWS_ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com/$IMAGE_REPO_NAME:$IMAGE_TAG
 
   post_build:
@@ -37,7 +33,6 @@ phases:
       - echo Pushing version image...
       - docker push $AWS_ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com/$IMAGE_REPO_NAME:$IMAGE_TAG
 
-      # ECS deployment file
       - printf '[{"name":"node-hello","imageUri":"%s"}]' \
         $AWS_ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com/$IMAGE_REPO_NAME:latest \
         > imagedefinitions.json

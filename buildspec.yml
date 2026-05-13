@@ -1,5 +1,9 @@
 version: 0.2
 
+env:
+  variables:
+    IMAGE_TAG: "latest"
+
 phases:
   pre_build:
     commands:
@@ -10,9 +14,14 @@ phases:
     commands:
       - echo Build started
       - docker build -t node-hello .
-      - docker tag node-hello:latest 348542648229.dkr.ecr.ap-south-1.amazonaws.com/node-hello:latest
+      - docker tag node-hello:latest 348542648229.dkr.ecr.ap-south-1.amazonaws.com/node-hello:$IMAGE_TAG
 
   post_build:
     commands:
       - echo Pushing Docker image...
-      - docker push 348542648229.dkr.ecr.ap-south-1.amazonaws.com/node-hello:latest
+      - docker push 348542648229.dkr.ecr.ap-south-1.amazonaws.com/node-hello:$IMAGE_TAG
+      - printf '[{"name":"node-hello","imageUri":"348542648229.dkr.ecr.ap-south-1.amazonaws.com/node-hello:%s"}]' $IMAGE_TAG > imagedefinitions.json
+
+artifacts:
+  files:
+    - imagedefinitions.json

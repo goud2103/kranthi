@@ -19,14 +19,14 @@ phases:
 
   build:
     commands:
-      - echo Build started
+      - echo Build started...
 
       - docker build -t $IMAGE_REPO_NAME .
 
-      # latest tag
+      # Tag latest
       - docker tag $IMAGE_REPO_NAME:latest $AWS_ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com/$IMAGE_REPO_NAME:latest
 
-      # version tag
+      # Tag version
       - docker tag $IMAGE_REPO_NAME:latest $AWS_ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com/$IMAGE_REPO_NAME:$IMAGE_TAG
 
   post_build:
@@ -37,12 +37,12 @@ phases:
       - echo Pushing version image...
       - docker push $AWS_ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com/$IMAGE_REPO_NAME:$IMAGE_TAG
 
-      - printf '[{"name":"node-hello","imageUri":"%s"}]' \
-        $AWS_ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com/$IMAGE_REPO_NAME:latest \
-        > imagedefinitions.json
+      - echo Writing imagedefinitions.json file...
+
+      - printf '[{"name":"node-hello","imageUri":"%s"}]' "$AWS_ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com/$IMAGE_REPO_NAME:latest" > imagedefinitions.json
+
+      - cat imagedefinitions.json
 
 artifacts:
   files:
     - imagedefinitions.json
-
-    

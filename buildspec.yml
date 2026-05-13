@@ -5,13 +5,17 @@ env:
     AWS_ACCOUNT_ID: "348542648229"
     AWS_DEFAULT_REGION: "ap-south-1"
     IMAGE_REPO_NAME: "node-hello"
-    IMAGE_TAG: "v1"
 
 phases:
   pre_build:
     commands:
       - echo Logging in to Amazon ECR...
       - aws ecr get-login-password --region $AWS_DEFAULT_REGION | docker login --username AWS --password-stdin $AWS_ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com
+
+      # Auto increment version
+      - IMAGE_TAG=v$CODEBUILD_BUILD_NUMBER
+
+      - echo Image tag is $IMAGE_TAG
 
   build:
     commands:
@@ -40,6 +44,3 @@ phases:
 artifacts:
   files:
     - imagedefinitions.json
-
-
-    
